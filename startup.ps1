@@ -15,14 +15,9 @@ $lights += 2
 $lights += 3
 
 #logs
-<<<<<<< HEAD
-if ($hostname = 'Haytham') {
+if ($hostname = 'Einstein') {
     #Überprüft den Hostname und setzt den Pfad für die Logs
     $log = "D:\Code\_log\startup.log"
-=======
-if($hostname = 'Einstein') {         #Überprüft den Hostname und setzt den Pfad für die Logs
-    $log = "W:\_logs\startup.log"
->>>>>>> 1792cdb94bf1a7c4f3d256281d229d7f8e164e09
 }
 elseif ($hostname = 'William') {
     #Überprüft den Hostname und setzt den Pfad für die Logs
@@ -69,24 +64,15 @@ else {
 
 
 #Schaut nach ob es nach 19:00 Uhr ist
-<<<<<<< HEAD
 if ($time -gt "19:00") {
     "$(get-date -format "yyyy-MM-dd HH:mm:ss"): Es ist nach 19:00 Uhr" | out-file $log -Append
     #Schaut ob die Hue Bridge erreichbar ist!
     if (Test-Connection -TargetName 192.168.178.29 -Quiet) {
         foreach ($light in $lights) {
-=======
-# if ($time -gt "19:00") {
-#     "$(get-date -format "yyyy-MM-dd HH:mm:ss"): Es ist nach 19:00 Uhr" | out-file $log -Append
-#     #Schaut ob die Hue Bridge erreichbar ist!
-#     if (Test-Connection 192.168.178.29 -Quiet) {
-#         foreach ($light in $lights){
->>>>>>> 1792cdb94bf1a7c4f3d256281d229d7f8e164e09
     
 #             $status = Invoke-RestMethod -Method Get -Uri "$($hueBridge)/$($username)/lights"
 #             $currentState = $status.$light | Select-Object state
     
-<<<<<<< HEAD
             If ($currentState.state.on.Equals($false)) {
                 $body = @{"on" = $true } | ConvertTo-Json
                 "$(get-date -format "yyyy-MM-dd HH:mm:ss"): Lampe $($light) war aus, und wurde angeschaltet" | out-file $log -Append
@@ -98,25 +84,11 @@ if ($time -gt "19:00") {
                 "$(get-date -format "yyyy-MM-dd HH:mm:ss"): Lampe $($light) war an, und wurde ausgeschaltet" | out-file $log -Append
                 $sucess = $false
             }
-=======
-#             If ($currentState.state.on.Equals($false)){
-#                 $body = @{"on"=$true} | ConvertTo-Json
-#                 "$(get-date -format "yyyy-MM-dd HH:mm:ss"): Lampe $($light) war aus, und wurde angeschaltet" | out-file $log -Append
-#                 $sucess = $true
-    
-#             } 
-#             else {
-#                 $body = @{"on"=$false} | ConvertTo-Json
-#                 "$(get-date -format "yyyy-MM-dd HH:mm:ss"): Lampe $($light) war an, und wurde ausgeschaltet" | out-file $log -Append
-#                 $sucess = $false
-#             }
->>>>>>> 1792cdb94bf1a7c4f3d256281d229d7f8e164e09
         
 #             Invoke-RestMethod -Method PUT -Uri "$($hueBridge)/$($username)/lights/$($light)/state" -Body $body | Out-Null
 #             #$result
 #         }
     
-<<<<<<< HEAD
         if ($sucess) {
             "$(get-date -format "yyyy-MM-dd HH:mm:ss"): Hue wurde angemacht" | out-file $log -Append
         }   
@@ -130,33 +102,12 @@ if ($time -gt "19:00") {
 }
 else {
     "$(get-date -format "yyyy-MM-dd HH:mm:ss"): Noch keine 19:00 Uhr" | out-file $log -Append
-}
+}}
 
 
 
-if ($hostname = 'Haytham') {
+if ($hostname = 'Einstein') {
     #Überprüft ob das Script auf dem HauptPC ausgeführt wird und wenn setzt die Standard Audioquelle auf die System von GOXLR
-=======
-#         if($sucess)
-#         {
-#             "$(get-date -format "yyyy-MM-dd HH:mm:ss"): Hue wurde angemacht" | out-file $log -Append
-#         }   
-#         else{
-#             "$(get-date -format "yyyy-MM-dd HH:mm:ss"): Hue wurde ausgemacht" | out-file $log -Append
-#         } 
-#     }
-#     else {
-#         "$(get-date -format "yyyy-MM-dd HH:mm:ss"): Keine Verbindung zu Hue möglich" | out-file $log -Append
-#     }
-# }
-# else {
-#     "$(get-date -format "yyyy-MM-dd HH:mm:ss"): Noch keine 19:00 Uhr" | out-file $log -Append
-# }
-
-
-
-<# if($hostname = 'Haytham'){       #Überprüft ob das Script auf dem HauptPC ausgeführt wird und wenn setzt die Standard Audioquelle auf die System von GOXLR
->>>>>>> 1792cdb94bf1a7c4f3d256281d229d7f8e164e09
     "$(get-date -format "yyyy-MM-dd HH:mm:ss"): Richtiges System" | out-file $log -Append
 
     If (! (Get-Module -Name "AudioDeviceCmdlets" -ListAvailable)) {            
@@ -179,7 +130,7 @@ if ($hostname = 'Haytham') {
 }
 else {
     "$(get-date -format "yyyy-MM-dd HH:mm:ss"): Falsches System" | out-file $log -Append
-} #>
+ } #>
 
 #Lösche Inhalt des Temp Ordners
 
