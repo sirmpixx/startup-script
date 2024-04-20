@@ -1,40 +1,35 @@
-#Windows Startup Script
-#Variablen
-$hostname = HOSTNAME.EXE        #Hostname des Geräts
-$user = [Security.Principal.WindowsIdentity]::GetCurrent(); #Hohlt die aktuellen Rechte
-$isAdmin = $false
-#Hue Variablen
-$sucess = $true
-$hueBridge = "http://192.168.178.29/api"        #Hue API
-$username = 'K65vhYFKvPhk8vLzYohZwF7EE999xPOtywgWtdDk'      #API Username
-$time = Get-Date -Format "HH:mm"    #Hohlt die Zeit
-#Hue Play Lampen
-$lights = @() 
-$lights += 1 
-$lights += 2
-$lights += 3
+######################################################### Header ###################################################
+# Scriptname: startup.ps1
+# Date: 20.04.2024
+# Version: 2.0
+# Authour: Maximilian Lanski (sirmpixx)
+# Synopsis: A startup script
+######################################################### Update Log ###############################################
+# Version 1.0: First Creation
+# Version 2.o: Complete rewrite of the script
+################################################## Global variables ################################################
+$logfile = "D:\Coding\logs\startup.log"
+##################################################### functions ####################################################
+# Gives a Timestamp
+function Get-Timestamp { 
+    $Timestamp = Get-date -format "dd-MM-yyyy HH:mm:ss"
+    return $Timestamp
+}
+# Write a LogEntry in a file with a timestamp
+function Write-LogEntry {
+Param($sLogEntry)
 
-#logs
-if ($hostname = 'Einstein') {
-    #Überprüft den Hostname und setzt den Pfad für die Logs
-    $log = "D:\Code\_log\startup.log"
-}
-elseif ($hostname = 'William') {
-    #Überprüft den Hostname und setzt den Pfad für die Logs
-    $log = "C:\Code\log\startup.log"
-}
-else {
-    mkdir C:\log\
-    $log = "C:\Users\maxim\AppData\Local\Temp\startup.log"
+    (Get-Timestamp ) + "  " + $sLogEntry | Out-File $logfile -Append
 } 
-
-#Überprüft ob das Script mit Adminrechten läuft
-if ((New-Object Security.Principal.WindowsPrincipal $user).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)) {
-    $isAdmin = $true
+#Checks if the user have Adminstartor Rights
+function Get-AdminRights {
+    param (
+        [bool]$isAdmin
+    )
+    ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 }
-
-#Wenn das Script mit Adminrechten läuft, wird der TimeSync Service gestartet und die Time wieder gesynct (Danke dafür Linux!)
-if ($isAdmin) { 
+#Start the w32time Service and sync the systemtime with a timeserver
+function Start-TimeService {
     $ServiceName = 'w32time'
     $arrService = Get-Service -Name $ServiceName
 
@@ -45,94 +40,78 @@ if ($isAdmin) {
 
     while ($ServiceStarted -ne $true) {
         Start-Service $ServiceName
-        write-host $arrService.status
-        write-host 'Service started'
-        $arrService = Get-Service -Name $ServiceName #Why is this line needed?
+        $arrService = Get-Service -Name $ServiceName
         if ($arrService.Status -eq 'Running') {
             $ServiceStarted = $true
         }
     }
-    #net start w32time
-    "$(get-date -format "yyyy-MM-dd HH:mm:ss"): w32time Service gestartet" | out-file $log -Append 
     W32tm /resync | Out-Null
-    "$(get-date -format "yyyy-MM-dd HH:mm:ss"): Zeit wurde gesynct" | out-file $log -Append
 }
-else {
-    "$(get-date -format "yyyy-MM-dd HH:mm:ss"): Kein Time Sync, da keine Adminrechte" | out-file $log -Append
-}
-
-
-
-#Schaut nach ob es nach 19:00 Uhr ist
-if ($time -gt "19:00") {
-    "$(get-date -format "yyyy-MM-dd HH:mm:ss"): Es ist nach 19:00 Uhr" | out-file $log -Append
-    #Schaut ob die Hue Bridge erreichbar ist!
-    if (Test-Connection -TargetName 192.168.178.29 -Quiet) {
-        foreach ($light in $lights) {
+#Set the Windows Audioplayback to a specifc Output Source
+function Set-Playback{
     
-#             $status = Invoke-RestMethod -Method Get -Uri "$($hueBridge)/$($username)/lights"
-#             $currentState = $status.$light | Select-Object state
-    
-            If ($currentState.state.on.Equals($false)) {
-                $body = @{"on" = $true } | ConvertTo-Json
-                "$(get-date -format "yyyy-MM-dd HH:mm:ss"): Lampe $($light) war aus, und wurde angeschaltet" | out-file $log -Append
-                $sucess = $true
-    
-            } 
-            else {
-                $body = @{"on" = $false } | ConvertTo-Json
-                "$(get-date -format "yyyy-MM-dd HH:mm:ss"): Lampe $($light) war an, und wurde ausgeschaltet" | out-file $log -Append
-                $sucess = $false
-            }
-        
-#             Invoke-RestMethod -Method PUT -Uri "$($hueBridge)/$($username)/lights/$($light)/state" -Body $body | Out-Null
-#             #$result
-#         }
-    
-        if ($sucess) {
-            "$(get-date -format "yyyy-MM-dd HH:mm:ss"): Hue wurde angemacht" | out-file $log -Append
-        }   
-        else {
-            "$(get-date -format "yyyy-MM-dd HH:mm:ss"): Hue wurde ausgemacht" | out-file $log -Append
-        } 
-    }
-    else {
-        "$(get-date -format "yyyy-MM-dd HH:mm:ss"): Keine Verbindung zu Hue möglich" | out-file $log -Append
-    }
-}
-else {
-    "$(get-date -format "yyyy-MM-dd HH:mm:ss"): Noch keine 19:00 Uhr" | out-file $log -Append
-}}
+    if ( $env:computername -eq "EINSTEIN") {
 
-
-
-if ($hostname = 'Einstein') {
-    #Überprüft ob das Script auf dem HauptPC ausgeführt wird und wenn setzt die Standard Audioquelle auf die System von GOXLR
-    "$(get-date -format "yyyy-MM-dd HH:mm:ss"): Richtiges System" | out-file $log -Append
-
-    If (! (Get-Module -Name "AudioDeviceCmdlets" -ListAvailable)) {            
-        $url = 'https://github.com/frgnca/AudioDeviceCmdlets/releases/download/v3.0/AudioDeviceCmdlets.dll'
-        $location = ($profile | split-path) + "\Modules\AudioDeviceCmdlets\AudioDeviceCmdlets.dll"
-        New-Item "$($profile | split-path)\Modules\AudioDeviceCmdlets" -Type directory -Force
-         
-        [Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls"
+        If (! (Get-Module -Name "AudioDeviceCmdlets" -ListAvailable)) {            
+            $url = 'https://github.com/frgnca/AudioDeviceCmdlets/releases/download/v3.0/AudioDeviceCmdlets.dll'
+            $location = ($profile | split-path) + "\Modules\AudioDeviceCmdlets\AudioDeviceCmdlets.dll"
+            New-Item "$($profile | split-path)\Modules\AudioDeviceCmdlets" -Type directory -Force
+             
+            [Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls"
             (New-Object System.Net.WebClient).DownloadFile($url, $location)
-        "$(get-date -format "yyyy-MM-dd HH:mm:ss"): Audio Module wurden installiert" | out-file $log -Append
+
+        
+        }
+        If (! (Get-Module -Name "AudioDeviceCmdlets")) {
+            get-module -Name "AudioDeviceCmdlets" -ListAvailable | Sort-Object Version | Select-Object -last 1 | Import-Module -Verbose
+        }
+        Get-AudioDevice -List | Where-Object Type -like "Playback" | Where-Object name -like "*CH5/6*" | Set-AudioDevice -Verbose | Out-Null
+        Get-AudioDevice -List | Where-Object Type -like "Recording" | Where-Object name -like "*Voice*" | Set-AudioDevice -Verbose | Out-Null
+
+    }
     
-    }
+}
+#Set the Windows Audioplayback to a specifc Input Source
+function Set-Recording {
+    if ( $env:computername -eq "EINSTEIN") {
 
-    If (! (Get-Module -Name "AudioDeviceCmdlets")) {
-        get-module -Name "AudioDeviceCmdlets" -ListAvailable | Sort-Object Version | Select-Object -last 1 | Import-Module -Verbose
-    }
+        If (! (Get-Module -Name "AudioDeviceCmdlets" -ListAvailable)) {            
+            $url = 'https://github.com/frgnca/AudioDeviceCmdlets/releases/download/v3.0/AudioDeviceCmdlets.dll'
+            $location = ($profile | split-path) + "\Modules\AudioDeviceCmdlets\AudioDeviceCmdlets.dll"
+            New-Item "$($profile | split-path)\Modules\AudioDeviceCmdlets" -Type directory -Force
+             
+            [Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls"
+            (New-Object System.Net.WebClient).DownloadFile($url, $location)
 
-    Get-AudioDevice -List | Where-Object Type -like "Playback" | Where-Object name -like "*System*" | Set-AudioDevice -Verbose | Out-Null
-    "$(get-date -format "yyyy-MM-dd HH:mm:ss"): Soundquelle wurde auf System geändert" | out-file $log -Append
+        
+        }
+        If (! (Get-Module -Name "AudioDeviceCmdlets")) {
+            get-module -Name "AudioDeviceCmdlets" -ListAvailable | Sort-Object Version | Select-Object -last 1
+        }
+        Get-AudioDevice -List | Where-Object Type -like "Recording" | Where-Object name -like "*Voice*" | Set-AudioDevice -Verbose | Out-Null
+
+    }
+}
+#Clears the Tempfolder
+function Clear-TempFolder {
+    Remove-Item -Path "C:\Users\maxim\AppData\Local\Temp\*" -Recurse  -ErrorAction SilentlyContinue | Out-Null 
+    
+}
+##################################################### Main Script ##################################################
+if (Get-AdminRights) {
+    Write-LogEntry "Das Script läuft mit Adminrechten"
+    Start-TimeService
+    Write-LogEntry "Der Time Service wurde gestartet und die Zeit wurde gesynct"
+    Set-Playback
+    Write-LogEntry 'Audioeingang wurde auf "CH5/6" gestellt'
+    Set-Recording
+    Write-LogEntry 'Audioeingang wurde auf "Voice" gestellt'
+    Clear-TempFolder
+    Write-LogEntry "Der Temporder wurde bereinigt"
+    Clear-RecycleBin -Force -ErrorAction SilentlyContinue
+    Write-LogEntry "Der Papierkorb wurde geleert"
 }
 else {
-    "$(get-date -format "yyyy-MM-dd HH:mm:ss"): Falsches System" | out-file $log -Append
- } #>
-
-#Lösche Inhalt des Temp Ordners
-
-#Remove-Item -Path "C:\Users\maxim\AppData\Local\Temp\*" -Recurse | Out-Null
-#"$(get-date -format "yyyy-MM-dd HH:mm:ss"): Temp Ordner wurde bereinigt" | out-file $log -Append
+    Write-LogEntry "ERROR: Das Script wurde ohne Adminrechte gestartet und wurde abgebrochen"
+    exit 1
+}
