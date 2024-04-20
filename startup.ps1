@@ -6,9 +6,12 @@
 # Synopsis: A startup script
 ######################################################### Update Log ###############################################
 # Version 1.0: First Creation
-# Version 2.o: Complete rewrite of the script
+# Version 2.0: Complete rewrite of the script
 ################################################## Global variables ################################################
-$logfile = "D:\Coding\logs\startup.log"
+$logfile = "/Path/to/log/XX.log"
+$playback = "*[Set Playback])*"
+$recording = "*[Set Recording])*"
+
 ##################################################### functions ####################################################
 # Gives a Timestamp
 function Get-Timestamp { 
@@ -17,9 +20,9 @@ function Get-Timestamp {
 }
 # Write a LogEntry in a file with a timestamp
 function Write-LogEntry {
-Param($sLogEntry)
+Param($LogEntry)
 
-    (Get-Timestamp ) + "  " + $sLogEntry | Out-File $logfile -Append
+    (Get-Timestamp ) + "  " + $LogEntry | Out-File $logfile -Append
 } 
 #Checks if the user have Adminstartor Rights
 function Get-AdminRights {
@@ -65,8 +68,8 @@ function Set-Playback{
         If (! (Get-Module -Name "AudioDeviceCmdlets")) {
             get-module -Name "AudioDeviceCmdlets" -ListAvailable | Sort-Object Version | Select-Object -last 1 | Import-Module -Verbose
         }
-        Get-AudioDevice -List | Where-Object Type -like "Playback" | Where-Object name -like "*CH5/6*" | Set-AudioDevice -Verbose | Out-Null
-        Get-AudioDevice -List | Where-Object Type -like "Recording" | Where-Object name -like "*Voice*" | Set-AudioDevice -Verbose | Out-Null
+        Get-AudioDevice -List | Where-Object Type -like "Playback" | Where-Object name -like $playback | Set-AudioDevice -Verbose | Out-Null
+        
 
     }
     
@@ -88,30 +91,32 @@ function Set-Recording {
         If (! (Get-Module -Name "AudioDeviceCmdlets")) {
             get-module -Name "AudioDeviceCmdlets" -ListAvailable | Sort-Object Version | Select-Object -last 1
         }
-        Get-AudioDevice -List | Where-Object Type -like "Recording" | Where-Object name -like "*Voice*" | Set-AudioDevice -Verbose | Out-Null
+        Get-AudioDevice -List | Where-Object Type -like "Recording" | Where-Object name -like $recording | Set-AudioDevice -Verbose | Out-Null
 
     }
 }
 #Clears the Tempfolder
 function Clear-TempFolder {
-    Remove-Item -Path "C:\Users\maxim\AppData\Local\Temp\*" -Recurse  -ErrorAction SilentlyContinue | Out-Null 
+    $tmpfolder = $env:TEMP 
+    $tmpfolder = "$($tmpfolder)\*"
+    Remove-Item -Path "$tmpfolder" -Recurse  -ErrorAction SilentlyContinue | Out-Null 
     
 }
 ##################################################### Main Script ##################################################
 if (Get-AdminRights) {
-    Write-LogEntry "Das Script läuft mit Adminrechten"
+    Write-LogEntry "This script runs with admin rights"
     Start-TimeService
-    Write-LogEntry "Der Time Service wurde gestartet und die Zeit wurde gesynct"
+    Write-LogEntry "Time Service started and synced"
     Set-Playback
-    Write-LogEntry 'Audioeingang wurde auf "CH5/6" gestellt'
+    Write-LogEntry "Playback was set to $($playback)"
     Set-Recording
-    Write-LogEntry 'Audioeingang wurde auf "Voice" gestellt'
+    Write-LogEntry "Recording was set to $($recording)"
     Clear-TempFolder
-    Write-LogEntry "Der Temporder wurde bereinigt"
+    Write-LogEntry "The temp folder was cleaned."
     Clear-RecycleBin -Force -ErrorAction SilentlyContinue
-    Write-LogEntry "Der Papierkorb wurde geleert"
+    Write-LogEntry "The Recycling Bin was cleaned."
 }
 else {
-    Write-LogEntry "ERROR: Das Script wurde ohne Adminrechte gestartet und wurde abgebrochen"
+    Write-LogEntry "ERROR: The script was started without administrator rights."
     exit 1
 }
